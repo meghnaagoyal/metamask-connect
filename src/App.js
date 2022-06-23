@@ -1,24 +1,46 @@
-import logo from './logo.svg';
-import './App.css';
+import Child from './components/child';
+import Frame from 'react-frame-component';
+import React ,{useRef, useEffect, useState} from 'react';
 
 function App() {
+  const iframeRef = useRef(null);
+  const [recievedMessage, setRecievedMessage] = useState("");
+  const[address, setAddress] = useState("");
+    
+    function accountChangeHandler(account){
+      setAddress(account);
+      if (!iframeRef.current) return;
+      iframeRef.current.contentWindow.postMessage(
+        account,
+        "http://localhost:3001"
+      );
+    }
+    function connectWallet(){
+      if(window.ethereum){
+      window.ethereum
+      .request({method : "eth_requestAccounts"})
+      .then((res)=>accountChangeHandler(res[0]))
+      }else {
+        alert("install metamask extension");
+      }
+    }
+    useEffect(() => {
+      window.addEventListener("message", function (e) {
+        if (e.origin !== "http://localhost:3001") return;
+        console.log(e.data);
+        setRecievedMessage("Got this message from child: " + e.data);
+             
+      });
+    }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <Frame><Child/></Frame>
+       <p>Parent Frame</p>
+       <button type="button" onClick={()=>{connectWallet()}}>ConnectWallet</button>
+       <p>{recievedMessage}</p>
     </div>
+   
   );
 }
 
